@@ -9,66 +9,62 @@ let dx = 0;
 let dy = 0;
 let score = 0;
 let level = 1;
-let speed = 100; // Milliseconds between updates
+let speed = 100;
 let gameLoop;
 
-// Game initialization
 document.addEventListener('keydown', changeDirection);
-startGame();
+document.addEventListener('DOMContentLoaded', () => {
+    startGame();
+    loadHighScores();
+});
 
 function startGame() {
     if (gameLoop) clearInterval(gameLoop);
-    speed = 100 - (level - 1) * 30; // Faster each level
+    speed = 100 - (level - 1) * 30; // Level 1: 100ms, Level 2: 70ms, Level 3: 40ms
     gameLoop = setInterval(update, speed);
 }
 
 function update() {
-    // Move snake
     const head = { x: snake[0].x + dx, y: snake[0].y + dy };
     snake.unshift(head);
 
-    // Check food collision
     if (head.x === food.x && head.y === food.y) {
         score += 10;
         document.getElementById('score').textContent = score;
         spawnFood();
-        if (score >= level * 30) { // Level up every 30 points
+        if (score >= level * 30 && level < 3) {
             levelUp();
+        } else if (level === 3 && score >= 90) {
+            endGame('You won! Completed all levels.');
         }
     } else {
         snake.pop();
     }
 
-    // Check wall collision (game over)
     if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-        resetGame();
+        endGame('Game Over! Wall collision.');
         return;
     }
 
-    // Check self collision
     for (let i = 1; i < snake.length; i++) {
         if (head.x === snake[i].x && head.y === snake[i].y) {
-            resetGame();
+            endGame('Game Over! Self collision.');
             return;
         }
     }
 
-    // Draw everything
     draw();
 }
 
 function draw() {
-    // Clear canvas
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw snake
     ctx.fillStyle = 'green';
     snake.forEach(segment => {
         ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
     });
 
-    // Draw food
     ctx.fillStyle = 'red';
     ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
 }
@@ -89,14 +85,16 @@ function changeDirection(event) {
 }
 
 function levelUp() {
-    if (level < 3) {
-        level++;
-        document.getElementById('level').textContent = level;
-        startGame(); // Restart with new speed
-    } else {
-        alert('You won! Game completed.');
-        resetGame();
-    }
+    level++;
+    document.getElementById('level').textContent = level;
+    startGame();
+}
+
+function endGame(message) {
+    clearInterval(gameLoop);
+    const name = prompt(`${message} Enter your name:`);
+    if (name) saveScore(name, score);
+    resetGame();
 }
 
 function resetGame() {
@@ -109,4 +107,34 @@ function resetGame() {
     document.getElementById('score').textContent = score;
     document.getElementById('level').textContent = level;
     startGame();
+    loadHighScores();
+}
+
+function saveScore(name, score) {
+    fetch('/save_score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) console.log(data.message);
+        loadHighScores();
+    })
+    .catch(error => console.error('Error saving score:', error));
+}
+
+function loadHighScores() {
+    fetch('/high_scores')
+        .then(response => response.json())
+        .then(scores => {
+            const scoresList = document.getElementById('scores-list');
+            scoresList.innerHTML = '';
+            scores.forEach(s => {
+                const li = document.createElement('li');
+                li.textContent = `${s.name}: ${s.score}`;
+                scoresList.appendChild(li);
+            });
+        })
+        .catch(error => console.error('Error loading scores:', error));
 }

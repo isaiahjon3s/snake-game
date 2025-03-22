@@ -11,6 +11,11 @@ canvas {
     background-color: #fff;
 }
 
-#game-info {
+#game-info, #high-scores {
     margin: 10px 0;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
 }
