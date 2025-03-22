@@ -4,7 +4,7 @@ const gridSize = 20;
 const tileCount = canvas.width / gridSize;
 
 let snake = [{ x: 10, y: 10 }];
-let food = { x: 15, y: 15 };
+let food = {}
 let dx = 0;
 let dy = 0;
 let score = 0;
@@ -16,11 +16,12 @@ document.addEventListener('keydown', changeDirection);
 document.addEventListener('DOMContentLoaded', () => {
     startGame();
     loadHighScores();
+    spawnFood();
 });
 
-function startGame() {
-    if (gameLoop) clearInterval(gameLoop);
-    speed = 100 - (level - 1) * 30; // Level 1: 100ms, Level 2: 70ms, Level 3: 40ms
+function startGame() { 
+    if (gameLoop) clearInterval(gameLoop); // Function checks if the gameLoop has a value, and if it does, clears the interval
+    speed = 100 - (level - 1) * 10; // Level 1: 100ms, Level 2: 70ms, Level 3: 40ms
     gameLoop = setInterval(update, speed);
 }
 
@@ -32,9 +33,9 @@ function update() {
         score += 10;
         document.getElementById('score').textContent = score;
         spawnFood();
-        if (score >= level * 30 && level < 3) {
+        if (score >= level * 10 && level < 9) {
             levelUp();
-        } else if (level === 3 && score >= 90) {
+        } else if (level === 9 && score >= 90) {
             endGame('You won! Completed all levels.');
         }
     } else {
@@ -75,12 +76,11 @@ function spawnFood() {
 }
 
 function changeDirection(event) {
-    const LEFT = 37, UP = 38, RIGHT = 39, DOWN = 40;
-    switch (event.keyCode) {
-        case LEFT: if (dx !== 1) { dx = -1; dy = 0; } break;
-        case UP: if (dy !== 1) { dx = 0; dy = -1; } break;
-        case RIGHT: if (dx !== -1) { dx = 1; dy = 0; } break;
-        case DOWN: if (dy !== -1) { dx = 0; dy = 1; } break;
+    switch (event.key) {
+        case 'ArrowLeft': if (dx !== 1) { dx = -1; dy = 0; } break;
+        case 'ArrowUp': if (dy !== 1) { dx = 0; dy = -1; } break;
+        case 'ArrowRight': if (dx !== -1) { dx = 1; dy = 0; } break;
+        case 'ArrowDown': if (dy !== -1) { dx = 0; dy = 1; } break;
     }
 }
 
