@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Snake Game</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Snake Game</h1>
+    <div id="game-info">
+        <p>Level: <span id="level">1</span></p>
+        <p>Score: <span id="score">0</span></p>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="high-scores">
+        <h2>High Scores</h2>
+        <ul id="scores-list"></ul>
+    </div>
+    <script>
+        backgroundImage.src = "{{ url_for('static', filename='background.jpg') }}";
+    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

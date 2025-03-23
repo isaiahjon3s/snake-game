@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 const gridSize = 20;
 const tileCount = canvas.width / gridSize;
 
+
 let snake = [{ x: 10, y: 10 }];
 let food = {}
 let dx = 0;
@@ -58,7 +59,7 @@ function update() {
 }
 
 function draw() {
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.fillStyle = 'green';
@@ -69,6 +70,7 @@ function draw() {
     ctx.fillStyle = 'red';
     ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
 }
+
 
 function spawnFood() {
     food.x = Math.floor(Math.random() * tileCount);
