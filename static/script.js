@@ -12,18 +12,130 @@ let score = 0;
 let level = 1;
 let speed = 100;
 let gameLoop;
+let startTime;
 
 document.addEventListener('keydown', changeDirection);
 document.addEventListener('DOMContentLoaded', () => {
-    startGame();
-    loadHighScores();
-    spawnFood();
+    // Initialize canvas and show username overlay
+    initializeCanvas();
+    document.getElementById('username-overlay').style.display = 'block';
+    
+    // Username form submission
+    document.getElementById('username-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const usernameInput = document.getElementById('username-input').value;
+        if (usernameInput.trim()) {
+            localStorage.setItem('username', usernameInput);
+            document.getElementById('username-overlay').style.display = 'none';
+            startNewGame();
+        }
+    });
+
+    // Button event listeners
+    document.querySelector('button[name="scores-button"]').onclick = showHighScores;
+    document.querySelector('button[name="play-again-button"]').onclick = startNewGame;
+    document.getElementById('playAgainBtn').onclick = startNewGame;
+
+    // Add keypress listener for Enter key
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && 
+            document.getElementById('gameOverOverlay')?.style.display === 'block') {
+            hideGameOverPopup();
+        }
+    });
 });
 
+function initializeCanvas() {
+    // Clear canvas and set initial state
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    spawnFood();
+    draw();
+}
+
+function startNewGame() {
+    // Reset game state
+    snake = [{ x: 10, y: 10 }];
+    food = { x: 15, y: 15 };
+    score = 0;
+    level = 1;
+    dx = 0;  // Start with no movement
+    dy = 0;
+    speed = 100;
+    
+    // Reset UI
+    document.getElementById('score').textContent = '0';
+    document.getElementById('level').textContent = '1';
+    
+    // Hide overlays
+    document.getElementById('gameOverOverlay').style.display = 'none';
+    
+    // Clear existing game loop
+    if (gameLoop) clearInterval(gameLoop);
+    
+    // Draw initial state without starting movement
+    spawnFood();
+    draw();
+}
+
 function startGame() { 
-    if (gameLoop) clearInterval(gameLoop); // Function checks if the gameLoop has a value, and if it does, clears the interval
-    speed = 100 - (level - 1) * 10; // Level 1: 100ms, Level 2: 70ms, Level 3: 40ms
+    if (gameLoop) clearInterval(gameLoop); 
+    startTime = Date.now(); // Record the start time
+    speed = 100 - (level - 1) * 10; 
     gameLoop = setInterval(update, speed);
+}
+
+function endGame() {
+    clearInterval(gameLoop);
+    const timeAlive = Math.floor((Date.now() - startTime) / 1000);
+    const username = localStorage.getItem('username');
+    
+    // Save score to localStorage
+    const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
+    scores.push({ username, score, timeAlive });
+    scores.sort((a, b) => b.score - a.score);
+    localStorage.setItem('highScores', JSON.stringify(scores.slice(0, 10)));
+    
+    showGameOverPopup(timeAlive);
+}
+
+function showGameOverPopup(timeAlive) {
+    const overlay = document.getElementById('gameOverOverlay');
+    const stats = document.getElementById('gameStats');
+    
+    // Make sure we have these elements
+    if (!overlay || !stats) {
+        console.error('Game over elements not found');
+        return;
+    }
+
+    stats.innerHTML = `
+        <p>Final Score: ${score}</p>
+        <p>Highest Level: ${level}</p>
+        <p>Time Survived: ${timeAlive} seconds</p>
+    `;
+    overlay.style.display = 'block';
+}
+
+function hideGameOverPopup() {
+    const overlay = document.getElementById('gameOverOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+        resetGame();
+    }
+}
+
+function recordTime(timeAlive) {
+    fetch('/record_time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ time_alive: timeAlive })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) console.log(data.message);
+    })
+    .catch(error => console.error('Error recording time:', error));
 }
 
 function update() {
@@ -37,20 +149,20 @@ function update() {
         if (score >= level * 10 && level < 9) {
             levelUp();
         } else if (level === 9 && score >= 90) {
-            endGame('You won! Completed all levels.');
+            return;
         }
     } else {
         snake.pop();
     }
 
     if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
-        endGame('Game Over! Wall collision.');
+        endGame();
         return;
     }
 
     for (let i = 1; i < snake.length; i++) {
         if (head.x === snake[i].x && head.y === snake[i].y) {
-            endGame('Game Over! Self collision.');
+            endGame();
             return;
         }
     }
@@ -59,30 +171,60 @@ function update() {
 }
 
 function draw() {
+    // Clear canvas
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = 'green';
+    // Draw snake
+    ctx.fillStyle = 'lime';
     snake.forEach(segment => {
-        ctx.fillRect(segment.x * gridSize, segment.y * gridSize, gridSize - 2, gridSize - 2);
+        ctx.fillRect(
+            segment.x * gridSize, 
+            segment.y * gridSize, 
+            gridSize - 2, 
+            gridSize - 2
+        );
     });
 
+    // Draw food
     ctx.fillStyle = 'red';
-    ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
+    ctx.fillRect(
+        food.x * gridSize,
+        food.y * gridSize,
+        gridSize - 2,
+        gridSize - 2
+    );
 }
 
-
 function spawnFood() {
-    food.x = Math.floor(Math.random() * tileCount);
-    food.y = Math.floor(Math.random() * tileCount);
+    do {
+        food.x = Math.floor(Math.random() * tileCount);
+        food.y = Math.floor(Math.random() * tileCount);
+    } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
 }
 
 function changeDirection(event) {
+    event.preventDefault(); // Prevent page scrolling
+    
+    // If game hasn't started (no movement), start it with first arrow press
+    if (!gameLoop) {
+        startTime = Date.now();
+        gameLoop = setInterval(update, speed);
+    }
+    
     switch (event.key) {
-        case 'ArrowLeft': if (dx !== 1) { dx = -1; dy = 0; } break;
-        case 'ArrowUp': if (dy !== 1) { dx = 0; dy = -1; } break;
-        case 'ArrowRight': if (dx !== -1) { dx = 1; dy = 0; } break;
-        case 'ArrowDown': if (dy !== -1) { dx = 0; dy = 1; } break;
+        case 'ArrowLeft': 
+            if (dx !== 1) { dx = -1; dy = 0; }
+            break;
+        case 'ArrowUp': 
+            if (dy !== 1) { dx = 0; dy = -1; }
+            break;
+        case 'ArrowRight': 
+            if (dx !== -1) { dx = 1; dy = 0; }
+            break;
+        case 'ArrowDown': 
+            if (dy !== -1) { dx = 0; dy = 1; }
+            break;
     }
 }
 
@@ -92,12 +234,6 @@ function levelUp() {
     startGame();
 }
 
-function endGame(message) {
-    clearInterval(gameLoop);
-    const name = prompt(`${message} Enter your name:`);
-    if (name) saveScore(name, score);
-    resetGame();
-}
 
 function resetGame() {
     snake = [{ x: 10, y: 10 }];
@@ -106,10 +242,9 @@ function resetGame() {
     dy = 0;
     score = 0;
     level = 1;
-    document.getElementById('score').textContent = score;
-    document.getElementById('level').textContent = level;
+    document.getElementById('score').textContent = '0';
+    document.getElementById('level').textContent = '1';
     startGame();
-    loadHighScores();
 }
 
 function saveScore(name, score) {
@@ -140,3 +275,20 @@ function loadHighScores() {
         })
         .catch(error => console.error('Error loading scores:', error));
 }
+
+function showHighScores() {
+    const overlay = document.getElementById('gameOverOverlay');
+    const stats = document.getElementById('gameStats');
+    const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
+    
+    let scoreHtml = '<h2>Top 10 High Scores</h2><table><tr><th>Player</th><th>Score</th></tr>';
+    scores.forEach(score => {
+        scoreHtml += `<tr><td>${score.username}</td><td>${score.score}</td></tr>`;
+    });
+    scoreHtml += '</table>';
+    
+    stats.innerHTML = scoreHtml;
+    overlay.style.display = 'block';
+}
+
+// Add event listener for view scores button
