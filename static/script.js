@@ -3,7 +3,6 @@ const ctx = canvas.getContext('2d');
 const gridSize = 20;
 const tileCount = canvas.width / gridSize;
 
-
 let snake = [{ x: 10, y: 10 }];
 let food = {}
 let dx = 0;
@@ -14,11 +13,6 @@ let speed = 100;
 let gameLoop;
 let startTime;
 
-// At the start of your script (before showing the overlay)
-localStorage.removeItem('username'); // Force a new username prompt
-
-usernameOverlay.style.display = 'flex'; // Show the overlay
-document.addEventListener('keydown', changeDirection);
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize canvas
     initializeCanvas();
@@ -26,33 +20,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Get DOM elements once
     const usernameOverlay = document.getElementById('username-overlay');
     const usernameForm = document.getElementById('username-form');
+    const usernameInput = document.getElementById('username-input');
 
     // Show overlay and focus input
     usernameOverlay.style.display = 'flex';
-    setTimeout(() => {
-        document.getElementById('username-input').focus();
-    }, 100);
+    usernameInput.focus();
     
-    // Add form submit handler
-    newUsernameForm.addEventListener('submit', (e) => {
+    // Handle form submission
+    usernameForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const username = document.getElementById('username-input').value.trim();
+        const username = usernameInput.value.trim();
         
         if (username) {
             localStorage.setItem('username', username);
             usernameOverlay.style.display = 'none';
-            startNewGame();
-        }
-    });
-
-    document.querySelector('button[name="play-again-button"]').onclick = startNewGame;
-    document.getElementById('playAgainBtn').onclick = startNewGame;
-
-    // Add keypress listener for Enter key
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' && 
-            document.getElementById('gameOverOverlay')?.style.display === 'block') {
-            hideGameOverPopup();
+            startNewGame(); // Call startNewGame instead of startGame
+            draw();
         }
     });
 });
@@ -71,7 +54,7 @@ function startNewGame() {
     food = { x: 15, y: 15 };
     score = 0;
     level = 1;
-    dx = 0;  // Start with no movement
+    dx = 0;
     dy = 0;
     speed = 100;
     
@@ -82,12 +65,14 @@ function startNewGame() {
     // Hide overlays
     document.getElementById('gameOverOverlay').style.display = 'none';
     
-    // Clear existing game loop
-    if (gameLoop) clearInterval(gameLoop);
-    
+    if(gameLoop) clearInterval(gameLoop); // Clear any existing game loop
+
     // Draw initial state without starting movement
     spawnFood();
     draw();
+
+    // Add keyboard listener for arrow keys
+    document.addEventListener('keydown', changeDirection);
 }
 
 function startGame() { 
@@ -209,22 +194,39 @@ function draw() {
 }
 
 function spawnFood() {
-    do {
         food.x = Math.floor(Math.random() * tileCount);
         food.y = Math.floor(Math.random() * tileCount);
-    } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
+
 }
 
 function changeDirection(event) {
     event.preventDefault(); // Prevent page scrolling
     
-    // If game hasn't started (no movement), start it with first arrow press
+    const key = event.key;
+    if (!key.includes('Arrow')) return;
+
+    // Start game on first arrow press if game isn't running
     if (!gameLoop) {
-        startTime = Date.now();
-        gameLoop = setInterval(update, speed);
+        switch (key) {
+            case 'ArrowLeft': 
+                dx = -1; dy = 0;
+                break;
+            case 'ArrowUp': 
+                dx = 0; dy = -1;
+                break;
+            case 'ArrowRight': 
+                dx = 1; dy = 0;
+                break;
+            case 'ArrowDown': 
+                dx = 0; dy = 1;
+                break;
+        }
+        startGame(); // Start the game loop
+        return;
     }
     
-    switch (event.key) {
+    // Handle direction changes during gameplay
+    switch (key) {
         case 'ArrowLeft': 
             if (dx !== 1) { dx = -1; dy = 0; }
             break;
@@ -245,7 +247,6 @@ function levelUp() {
     document.getElementById('level').textContent = level;
     startGame();
 }
-
 
 function resetGame() {
     snake = [{ x: 10, y: 10 }];
