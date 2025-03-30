@@ -14,25 +14,37 @@ let speed = 100;
 let gameLoop;
 let startTime;
 
+// At the start of your script (before showing the overlay)
+localStorage.removeItem('username'); // Force a new username prompt
+
+usernameOverlay.style.display = 'flex'; // Show the overlay
 document.addEventListener('keydown', changeDirection);
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize canvas and show username overlay
+    // Initialize canvas
     initializeCanvas();
-    document.getElementById('username-overlay').style.display = 'block';
     
-    // Username form submission
-    document.getElementById('username-form').addEventListener('submit', (e) => {
+    // Get DOM elements once
+    const usernameOverlay = document.getElementById('username-overlay');
+    const usernameForm = document.getElementById('username-form');
+
+    // Show overlay and focus input
+    usernameOverlay.style.display = 'flex';
+    setTimeout(() => {
+        document.getElementById('username-input').focus();
+    }, 100);
+    
+    // Add form submit handler
+    newUsernameForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const usernameInput = document.getElementById('username-input').value;
-        if (usernameInput.trim()) {
-            localStorage.setItem('username', usernameInput);
-            document.getElementById('username-overlay').style.display = 'none';
+        const username = document.getElementById('username-input').value.trim();
+        
+        if (username) {
+            localStorage.setItem('username', username);
+            usernameOverlay.style.display = 'none';
             startNewGame();
         }
     });
 
-    // Button event listeners
-    document.querySelector('button[name="scores-button"]').onclick = showHighScores;
     document.querySelector('button[name="play-again-button"]').onclick = startNewGame;
     document.getElementById('playAgainBtn').onclick = startNewGame;
 
@@ -261,34 +273,3 @@ function saveScore(name, score) {
     .catch(error => console.error('Error saving score:', error));
 }
 
-function loadHighScores() {
-    fetch('/high_scores')
-        .then(response => response.json())
-        .then(scores => {
-            const scoresList = document.getElementById('scores-list');
-            scoresList.innerHTML = '';
-            scores.forEach(s => {
-                const li = document.createElement('li');
-                li.textContent = `${s.name}: ${s.score}`;
-                scoresList.appendChild(li);
-            });
-        })
-        .catch(error => console.error('Error loading scores:', error));
-}
-
-function showHighScores() {
-    const overlay = document.getElementById('gameOverOverlay');
-    const stats = document.getElementById('gameStats');
-    const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    
-    let scoreHtml = '<h2>Top 10 High Scores</h2><table><tr><th>Player</th><th>Score</th></tr>';
-    scores.forEach(score => {
-        scoreHtml += `<tr><td>${score.username}</td><td>${score.score}</td></tr>`;
-    });
-    scoreHtml += '</table>';
-    
-    stats.innerHTML = scoreHtml;
-    overlay.style.display = 'block';
-}
-
-// Add event listener for view scores button
