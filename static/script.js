@@ -26,16 +26,19 @@ document.addEventListener('DOMContentLoaded', () => {
     usernameOverlay.style.display = 'flex';
     usernameInput.focus();
     
-    // Handle form submission
+    // Handle form submission (works for both button click and Enter key)
     usernameForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const username = usernameInput.value.trim();
         
         if (username) {
+
             localStorage.setItem('username', username);
             usernameOverlay.style.display = 'none';
-            startNewGame(); // Call startNewGame instead of startGame
+            startGame();
             draw();
+
+
         }
     });
 });
@@ -202,31 +205,7 @@ function spawnFood() {
 function changeDirection(event) {
     event.preventDefault(); // Prevent page scrolling
     
-    const key = event.key;
-    if (!key.includes('Arrow')) return;
-
-    // Start game on first arrow press if game isn't running
-    if (!gameLoop) {
-        switch (key) {
-            case 'ArrowLeft': 
-                dx = -1; dy = 0;
-                break;
-            case 'ArrowUp': 
-                dx = 0; dy = -1;
-                break;
-            case 'ArrowRight': 
-                dx = 1; dy = 0;
-                break;
-            case 'ArrowDown': 
-                dx = 0; dy = 1;
-                break;
-        }
-        startGame(); // Start the game loop
-        return;
-    }
-    
-    // Handle direction changes during gameplay
-    switch (key) {
+    switch (event.key) {
         case 'ArrowLeft': 
             if (dx !== 1) { dx = -1; dy = 0; }
             break;
