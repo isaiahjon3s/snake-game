@@ -4,7 +4,7 @@ const gridSize = 20;
 const tileCount = canvas.width / gridSize;
 
 let snake = [{ x: 10, y: 10 }];
-let food = {}
+let food = {};
 let dx = 0;
 let dy = 0;
 let score = 0;
@@ -13,47 +13,52 @@ let speed = 100;
 let gameLoop;
 let startTime;
 
-document.addEventListener('DOMContentLoaded', () => {
+function main() {
+
     // Initialize canvas
     initializeCanvas();
     
     // Get DOM elements once
     const usernameOverlay = document.getElementById('username-overlay');
-    const usernameForm = document.getElementById('username-form');
     const usernameInput = document.getElementById('username-input');
 
     // Show overlay and focus input
     usernameOverlay.style.display = 'flex';
     usernameInput.focus();
     
-    // Handle form submission (works for both button click and Enter key)
+    // Set up event listeners
+    setupEventListeners();
+
+    startGame();
+}
+
+// Add this function to set up event listeners
+function setupEventListeners() {
+    const usernameForm = document.getElementById('username-form');
+    
     usernameForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const username = usernameInput.value.trim();
+        const username = document.getElementById('username-input').value.trim();
         
         if (username) {
-
             localStorage.setItem('username', username);
-            usernameOverlay.style.display = 'none';
-            startGame();
-            draw();
-
-
+            document.getElementById('username-overlay').style.display = 'none';
         }
     });
-});
+}
+
+// Call main when the DOM is loaded
+document.addEventListener('DOMContentLoaded', main);
 
 function initializeCanvas() {
     // Clear canvas and set initial state
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    spawnFood();
-    draw();
 }
 
 function startNewGame() {
     // Reset game state
-    snake = [{ x: 10, y: 10 }];
+    snake = [{ x: 10, y: 15 }];
     food = { x: 15, y: 15 };
     score = 0;
     level = 1;
@@ -83,6 +88,9 @@ function startGame() {
     startTime = Date.now(); // Record the start time
     speed = 100 - (level - 1) * 10; 
     gameLoop = setInterval(update, speed);
+    spawnFood();
+    draw();
+
 }
 
 function endGame() {
