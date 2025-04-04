@@ -6,6 +6,37 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <div id="username-overlay" class="overlay">
+        <div class="popup">
+            <h2>Enter Your Name</h2>
+            <form id="username-form">
+                <input 
+                    type="text" 
+                    id="username-input" 
+                    placeholder="Enter your username" 
+                    required 
+                    autocomplete="off"
+                >
+                <button type="submit">Start Game</button>
+            </form>
+        </div>
+    </div>
+    <div id="game-over-overlay" class="overlay">
+        <div class="popup">
+            <h2>Game Over</h2>
+            <p>Your score: <span id="final-score"></span></p>
+            <form id="restart-form">
+                <button type="submit">Play Again</button>
+            </form>
+        </div>
+    </div>
+    <div id="gameOverOverlay" class="overlay" style="display: none;">
+        <div class="popup">
+            <h2>Game Over!</h2>
+            <div id="gameStats"></div>
+            <button onclick="hideGameOverPopup()">Play Again</button>
+        </div>
+    </div>
     <h1>Snake Game</h1>
     <div id="game-info">
         <p>Level: <span id="level">1</span></p>

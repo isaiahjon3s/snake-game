@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block body %}
+    <div class="container mt-5">
+        <h1 class="text-center">Welcome to Snake Game</h1>
+        <form action="{{ url_for('start') }}" method="post" class="mt-4">
+            <div class="mb-3">
+                <input class="form-control" placeholder="Enter your username" type="text" name="username" required>
+            </div>
+            <button class="btn btn-primary w-100" type="submit">Play Game</button>
+        </form>
+    </div>
+{% endblock %}

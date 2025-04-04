@@ -28,9 +28,9 @@ function main() {
     
     // Set up event listeners
     setupEventListeners();
-
-    startGame();
 }
+
+
 
 // Add this function to set up event listeners
 function setupEventListeners() {
@@ -43,6 +43,9 @@ function setupEventListeners() {
         if (username) {
             localStorage.setItem('username', username);
             document.getElementById('username-overlay').style.display = 'none';
+            // Add the keydown listener only after username is submitted
+            document.addEventListener('keydown', changeDirection);
+            startGame();
         }
     });
 }
@@ -56,32 +59,6 @@ function initializeCanvas() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function startNewGame() {
-    // Reset game state
-    snake = [{ x: 10, y: 15 }];
-    food = { x: 15, y: 15 };
-    score = 0;
-    level = 1;
-    dx = 0;
-    dy = 0;
-    speed = 100;
-    
-    // Reset UI
-    document.getElementById('score').textContent = '0';
-    document.getElementById('level').textContent = '1';
-    
-    // Hide overlays
-    document.getElementById('gameOverOverlay').style.display = 'none';
-    
-    if(gameLoop) clearInterval(gameLoop); // Clear any existing game loop
-
-    // Draw initial state without starting movement
-    spawnFood();
-    draw();
-
-    // Add keyboard listener for arrow keys
-    document.addEventListener('keydown', changeDirection);
-}
 
 function startGame() { 
     if (gameLoop) clearInterval(gameLoop); 
@@ -90,11 +67,16 @@ function startGame() {
     gameLoop = setInterval(update, speed);
     spawnFood();
     draw();
-
 }
 
 function endGame() {
-    clearInterval(gameLoop);
+    // Stop the game loop
+    if (gameLoop) {
+        clearInterval(gameLoop);
+        gameLoop = null;
+    }
+
+    // Calculate time alive
     const timeAlive = Math.floor((Date.now() - startTime) / 1000);
     const username = localStorage.getItem('username');
     
@@ -104,7 +86,12 @@ function endGame() {
     scores.sort((a, b) => b.score - a.score);
     localStorage.setItem('highScores', JSON.stringify(scores.slice(0, 10)));
     
+    // Show the game over popup
     showGameOverPopup(timeAlive);
+    
+    // Reset movement
+    dx = 0;
+    dy = 0;
 }
 
 function showGameOverPopup(timeAlive) {
