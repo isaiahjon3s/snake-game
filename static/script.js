@@ -12,6 +12,8 @@ let level = 1;
 let speed = 100;
 let gameLoop;
 let startTime;
+let totalTimeAlive = 0;  // Tracks cumulative time across all levels
+let lastStartTime = 0;   // Marks when current level started
 
 function main() {
 
@@ -61,8 +63,8 @@ function initializeCanvas() {
 
 
 function startGame() { 
-    if (gameLoop) clearInterval(gameLoop); 
-    startTime = Date.now(); // Record the start time
+    if (gameLoop) clearInterval(gameLoop);  
+    startTime = performance.now(); // Record the start time
     speed = 100 - (level - 1) * 10; 
     gameLoop = setInterval(update, speed);
     spawnFood();
@@ -77,7 +79,8 @@ function endGame() {
     }
 
     // Calculate time alive
-    const timeAlive = Math.floor((Date.now() - startTime) / 1000);
+    const endTime = performance.now();
+    const timeAlive = (endTime - startTime) / 1000; // Convert to seconds
     const username = localStorage.getItem('username');
     
     // Save score to localStorage
@@ -107,7 +110,7 @@ function showGameOverPopup(timeAlive) {
     stats.innerHTML = `
         <p>Final Score: ${score}</p>
         <p>Highest Level: ${level}</p>
-        <p>Time Survived: ${timeAlive} seconds</p>
+        <p>Time Survived: ${timeAlive.toFixed(2)} seconds</p>
     `;
     overlay.style.display = 'block';
 }
@@ -217,9 +220,23 @@ function changeDirection(event) {
 }
 
 function levelUp() {
-    level++;
+    // 1. First handle the time calculation
+    const levelEndTime = performance.now();
+    totalTimeAlive += (levelEndTime - lastStartTime) / 1000;
+    
+    // 2. Increase the level
+    level++;  // This increments the level counter
+    
+    // 3. Update the level display
     document.getElementById('level').textContent = level;
-    startGame();
+    
+    // 4. Prepare for the new level
+    lastStartTime = performance.now();
+    speed = Math.max(50, 100 - (level - 1) * 10); // Minimum speed of 50ms
+    
+    // 5. Restart game loop with new speed
+    clearInterval(gameLoop);
+    gameLoop = setInterval(update, speed);
 }
 
 function resetGame() {
@@ -229,6 +246,7 @@ function resetGame() {
     dy = 0;
     score = 0;
     level = 1;
+    startTime = null;
     document.getElementById('score').textContent = '0';
     document.getElementById('level').textContent = '1';
     startGame();
